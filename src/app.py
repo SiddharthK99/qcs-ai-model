@@ -68,7 +68,7 @@ def generate_response():
         # Generate a response using the model
         outputs = model.generate(
             inputs["input_ids"],
-            max_length=1000,
+            max_length=250,
             temperature=0.1,
             top_p=0.1,
             do_sample=True,
