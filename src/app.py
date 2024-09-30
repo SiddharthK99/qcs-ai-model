@@ -63,7 +63,7 @@ def generate_response():
             return jsonify({"error": "Prompt is empty or missing"}), 400
 
         # Tokenize the input prompt
-        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=1000).to(model.device)
+        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=10000).to(model.device)
 
         # Generate a response using the model
         outputs = model.generate(
