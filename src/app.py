@@ -68,16 +68,18 @@ def generate_response():
         # Generate a response using the model
         outputs = model.generate(
             inputs["input_ids"],
-            max_new_tokens=250,
-            temperature=0.1,
-            top_p=0.1,
+            max_new_tokens=250,  # Limit tokens to maintain concise answers
+            temperature=0.7,      # Adjust temperature for more creative responses
+            top_p=0.9,            # Increase top_p for diverse response generation
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id,
         )
 
         # Decode the generated tokens into a response string
         response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        return jsonify({"response": response})
+
+        # Post-process the response to remove any irrelevant info
+        return jsonify({"response": response.strip()})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
