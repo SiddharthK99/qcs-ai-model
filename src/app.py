@@ -68,9 +68,9 @@ def generate_response():
         # Generate a response using the model
         outputs = model.generate(
             inputs["input_ids"],
-            max_length=256,
-            temperature=0.7,
-            top_p=0.9,
+            max_length=1000,
+            temperature=0.1,
+            top_p=0.1,
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id,
         )
