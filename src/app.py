@@ -116,13 +116,9 @@ def generate_response():
             return jsonify({"error": "User ID is missing"}), 400
 
         # Retrieve conversation history if exists
-        history = conversation_history.get(user_id, "")
 
         # Create the complete prompt with history
         complete_prompt = PROMPT_TEMPLATE.format(user_input=prompt)
-        if history:
-            complete_prompt = history + "\n" + complete_prompt
-
         logger.info(f"Generating response for user_id={user_id} with prompt: {prompt}")
 
         # Tokenize the input prompt
