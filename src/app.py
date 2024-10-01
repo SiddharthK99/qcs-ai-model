@@ -93,10 +93,7 @@ model.eval()
 logger.info("Model set to evaluation mode.")
 
 # Define a prompt template to guide the model
-PROMPT_TEMPLATE = """You are an AI assistant that provides accurate and concise answers to user queries.
-
-User: {user_input}
-Assistant:"""
+PROMPT_TEMPLATE = "{user_input}"
 
 # Optional: Implement conversation history (simple version using in-memory storage)
 # For production, consider using a database or other persistent storage
