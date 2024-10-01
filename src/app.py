@@ -3,7 +3,7 @@ import json
 import torch
 import logging
 from flask import Flask, request, jsonify
-from transformers import LlamaForCausalLM, PreTrainedTokenizerFast, BitsAndBytesConfig
+from transformers import LlamaForCausalLM, LlamaTokenizer, BitsAndBytesConfig
 from huggingface_hub import login
 from datetime import datetime
 
@@ -33,16 +33,16 @@ if not hf_api_token:
     raise ValueError("Hugging Face API token not found in config.json. Please add it under 'hf_api_token' key.")
 
 # Authenticate with Hugging Face
-login(token=hf_api_token)
+login(token=hf_api_token, add_to_git_credential=True)  # Save token to git credentials
 logger.info("Authenticated with Hugging Face.")
 
 # Initialize Flask application
 app = Flask(__name__)
 
 # Load model and tokenizer from Hugging Face
-model_name = "meta-llama/Llama-3.1-70B"
+model_name = "meta-llama/Llama-3.1-8B"
 logger.info(f"Loading tokenizer for model '{model_name}'.")
-tokenizer = PreTrainedTokenizerFast.from_pretrained(model_name)
+tokenizer = LlamaTokenizer.from_pretrained(model_name)
 
 # Check if CUDA (GPU) is available
 is_cuda_available = torch.cuda.is_available()
@@ -51,18 +51,22 @@ logger.info(f"CUDA available: {is_cuda_available}. Using device: {device}.")
 
 # Configure model to use 8-bit quantization with GPU if available
 quantization_config = BitsAndBytesConfig(
-    load_in_8bit=True,  # Always use 8-bit for memory efficiency
-    llm_int8_threshold=6.0,
+    load_in_8bit=True,  # Use 8-bit for memory efficiency
+    llm_int8_threshold=6.0,  # Set a higher threshold for switching between fp32 and int8
 ) if is_cuda_available else None
 
-# Load the model with quantization and place it on the GPU or CPU
-logger.info(f"Loading model '{model_name}' with device map: {device}.")
+# Custom device map to handle GPU and CPU memory allocation
+device_map = {"model.encoder": "cuda", "model.decoder": "cpu", "lm_head": "cuda"} if is_cuda_available else {"": "cpu"}
+
+# Load the model with quantization and custom device mapping
+logger.info(f"Loading model '{model_name}' with custom device map.")
 model = LlamaForCausalLM.from_pretrained(
     model_name,
     quantization_config=quantization_config,
     torch_dtype=torch.float16 if is_cuda_available else torch.float32,  # Use appropriate dtype
     low_cpu_mem_usage=True,
-    device_map="auto" if is_cuda_available else {"": "cpu"}  # Map to GPU if available, otherwise CPU
+    device_map=device_map,  # Use the custom device map for CPU/GPU allocation
+    load_in_8bit_fp32_cpu_offload=True  # Enable CPU offload for 8-bit quantized layers if necessary
 )
 
 # Set the model to evaluation mode to reduce overhead
@@ -117,7 +121,7 @@ def generate_response():
         # Generate a response using the model
         outputs = model.generate(
             inputs["input_ids"],
-            max_new_tokens=250,  # Limit tokens to maintain concise answers
+            max_new_tokens=500,  # Limit tokens to maintain concise answers
             temperature=0.7,      # Adjust temperature for creativity
             top_p=0.9,            # Increase top_p for diversity
             do_sample=True,
