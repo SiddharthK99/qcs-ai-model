@@ -154,9 +154,6 @@ def generate_response():
         # Extract the assistant's reply by removing the prompt
         response = response[len(complete_prompt):].strip()
 
-        # Update conversation history
-        conversation_history[user_id] = complete_prompt + "\n" + response
-
         logger.info(f"Response for user_id={user_id}: {response}")
 
         # Post-process the response to remove any irrelevant info
