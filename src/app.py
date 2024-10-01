@@ -66,8 +66,9 @@ logger.info(f"CUDA available: {is_cuda_available}. Using device: {device}.")
 
 # Configure model to use 8-bit quantization with GPU if available
 quantization_config = BitsAndBytesConfig(
-    load_in_8bit=True,  # Use 8-bit for memory efficiency
-    llm_int8_threshold=6.0,  # Set a higher threshold for switching between fp32 and int8
+    load_in_8bit=True,                        # Use 8-bit for memory efficiency
+    load_in_8bit_fp32_cpu_offload=True,       # Offload some 8-bit modules to CPU if GPU memory is insufficient
+    llm_int8_threshold=6.0,                    # Threshold for switching between FP32 and INT8
 ) if is_cuda_available else None
 
 try:
@@ -78,7 +79,6 @@ try:
         torch_dtype=torch.float16 if is_cuda_available else torch.float32,  # Use appropriate dtype
         low_cpu_mem_usage=True,
         device_map="auto",  # Let transformers handle device placement
-        load_in_8bit_fp32_cpu_offload=True  # Enable CPU offload for 8-bit quantized layers if necessary
     )
     logger.info("Model loaded successfully with quantization and CPU offloading.")
 except ValueError as ve:
