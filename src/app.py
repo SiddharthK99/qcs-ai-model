@@ -121,7 +121,7 @@ def generate_response():
             complete_prompt,
             return_tensors="pt",
             truncation=True,
-            max_length=2048  # Adjust max_length as per model's context window
+            max_length=10000  # Adjust max_length as per model's context window
         )
 
         # Move inputs to appropriate device
@@ -133,7 +133,7 @@ def generate_response():
         # Generate a response using the model
         outputs = model.generate(
             inputs["input_ids"],
-            max_new_tokens=250,  # Limit tokens to maintain concise answers
+            max_new_tokens=1000,  # Limit tokens to maintain concise answers
             temperature=0.7,      # Adjust temperature for creativity
             top_p=0.9,            # Increase top_p for diversity
             do_sample=True,
