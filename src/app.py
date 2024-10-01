@@ -177,6 +177,6 @@ if __name__ == '__main__':
     host = os.getenv('FLASK_HOST', '0.0.0.0')
     port = int(os.getenv('FLASK_PORT', 5000))
 
-    logger.info(f"Starting Flask app on {host}:{port} with debug={debug}.")
+    logger.info(f"Starting Flask app on {host}:{port}.")
     # Start the Flask app
     app.run(host=host, port=port)
