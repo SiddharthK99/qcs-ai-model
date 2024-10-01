@@ -110,16 +110,11 @@ def generate_response():
         if not prompt:
             logger.warning("Received empty prompt.")
             return jsonify({"error": "Prompt is empty or missing"}), 400
+  
 
-        if not user_id:
-            logger.warning("User ID is missing in the request.")
-            return jsonify({"error": "User ID is missing"}), 400
-
-        # Retrieve conversation history if exists
-
-        # Create the complete prompt with history
+          # Create the complete prompt with history
         complete_prompt = PROMPT_TEMPLATE.format(user_input=prompt)
-        logger.info(f"Generating response for user_id={user_id} with prompt: {prompt}")
+        logger.info(f"Generating response  with prompt: {prompt}")
 
         # Tokenize the input prompt
         inputs = tokenizer(
@@ -154,7 +149,7 @@ def generate_response():
         # Extract the assistant's reply by removing the prompt
         response = response[len(complete_prompt):].strip()
 
-        logger.info(f"Response for user_id={user_id}: {response}")
+        logger.info(f"Response {response}")
 
         # Post-process the response to remove any irrelevant info
         return jsonify({"response": response})
