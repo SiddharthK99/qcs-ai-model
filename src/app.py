@@ -27,7 +27,7 @@ login(hf_api_token)
 app = Flask(__name__)
 
 # Load model and tokenizer from Hugging Face
-model_name = "meta-llama/Llama-2-7b-chat-hf"
+model_name = "meta-llama/Llama-3.1-70B"
 tokenizer = LlamaTokenizer.from_pretrained(model_name)
 
 # Check if CUDA (GPU) is available
