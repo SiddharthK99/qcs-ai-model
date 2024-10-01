@@ -176,8 +176,7 @@ if __name__ == '__main__':
     # Load environment variables for Flask configuration if needed
     host = os.getenv('FLASK_HOST', '0.0.0.0')
     port = int(os.getenv('FLASK_PORT', 5000))
-    debug = os.getenv('FLASK_DEBUG', 'false').lower() in ['true', '1', 't']
 
     logger.info(f"Starting Flask app on {host}:{port} with debug={debug}.")
     # Start the Flask app
-    app.run(host=host, port=port, debug=debug)
+    app.run(host=host, port=port)
