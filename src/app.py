@@ -3,7 +3,7 @@ import json
 import torch
 import logging
 from flask import Flask, request, jsonify
-from transformers import LlamaForCausalLM, LlamaTokenizer, BitsAndBytesConfig
+from transformers import LlamaForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from huggingface_hub import login
 from datetime import datetime
 
@@ -42,7 +42,7 @@ app = Flask(__name__)
 # Load model and tokenizer from Hugging Face
 model_name = "meta-llama/Llama-3.1-8B"
 logger.info(f"Loading tokenizer for model '{model_name}'.")
-tokenizer = LlamaTokenizer.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
 
 # Check if CUDA (GPU) is available
 is_cuda_available = torch.cuda.is_available()
