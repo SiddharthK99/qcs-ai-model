@@ -48,7 +48,7 @@ except Exception as e:
 app = Flask(__name__)
 
 # Load model and tokenizer from Hugging Face
-model_name = "meta-llama/Llama-3.1-70B"  # Ensure this is the correct model name
+model_name = "meta-llama/Llama-3.1-8B"  # Ensure this is the correct model name
 logger.info(f"Loading tokenizer and model for '{model_name}'.")
 
 try:
@@ -67,7 +67,7 @@ logger.info(f"CUDA available: {is_cuda_available}. Using device: {device}.")
 # Configure model to use 8-bit quantization with GPU if available
 quantization_config = BitsAndBytesConfig(
     load_in_8bit=True,                        # Use 8-bit for memory efficiency
-    load_in_8bit_fp32_cpu_offload=True,       # Offload some 8-bit modules to CPU if GPU memory is insufficient
+    bnb_8bit_fp32_cpu_offload=True,           # Correct parameter name for CPU offloading
     llm_int8_threshold=6.0,                    # Threshold for switching between FP32 and INT8
 ) if is_cuda_available else None
 
