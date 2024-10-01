@@ -105,7 +105,6 @@ def generate_response():
     try:
         # Get the input prompt from the request
         data = request.json
-        user_id = data.get('user_id')  # To manage conversation history per user
         prompt = data.get('prompt', '').strip()
 
         if not prompt:
