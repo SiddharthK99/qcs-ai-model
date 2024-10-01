@@ -3,7 +3,7 @@ import json
 import torch
 import logging
 from flask import Flask, request, jsonify
-from transformers import LlamaForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from huggingface_hub import login
 from datetime import datetime
 
@@ -21,7 +21,9 @@ config_path = "config.json"
 # Check if config.json exists and read the Hugging Face API token
 if not os.path.exists(config_path):
     logger.error(f"Configuration file '{config_path}' not found.")
-    raise FileNotFoundError(f"Configuration file '{config_path}' not found. Please create it and add your Hugging Face API token.")
+    raise FileNotFoundError(
+        f"Configuration file '{config_path}' not found. Please create it and add your Hugging Face API token."
+    )
 
 with open(config_path, 'r') as f:
     config = json.load(f)
@@ -30,19 +32,32 @@ hf_api_token = config.get("hf_api_token")
 
 if not hf_api_token:
     logger.error("Hugging Face API token not found in config.json.")
-    raise ValueError("Hugging Face API token not found in config.json. Please add it under 'hf_api_token' key.")
+    raise ValueError(
+        "Hugging Face API token not found in config.json. Please add it under 'hf_api_token' key."
+    )
 
 # Authenticate with Hugging Face
-login(token=hf_api_token, add_to_git_credential=True)  # Save token to git credentials
-logger.info("Authenticated with Hugging Face.")
+try:
+    login(token=hf_api_token, add_to_git_credential=True)  # Save token to git credentials
+    logger.info("Authenticated with Hugging Face.")
+except Exception as e:
+    logger.error(f"Failed to authenticate with Hugging Face: {str(e)}")
+    raise
 
 # Initialize Flask application
 app = Flask(__name__)
 
 # Load model and tokenizer from Hugging Face
-model_name = "meta-llama/Llama-3.1-8B"
-logger.info(f"Loading tokenizer for model '{model_name}'.")
-tokenizer = AutoTokenizer.from_pretrained(model_name)
+model_name = "meta-llama/Llama-3.1-70B"  # Ensure this is the correct model name
+logger.info(f"Loading tokenizer and model for '{model_name}'.")
+
+try:
+    # Use AutoTokenizer and AutoModelForCausalLM for compatibility
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    logger.info("Tokenizer loaded successfully.")
+except Exception as e:
+    logger.error(f"Failed to load tokenizer: {str(e)}")
+    raise
 
 # Check if CUDA (GPU) is available
 is_cuda_available = torch.cuda.is_available()
@@ -55,23 +70,27 @@ quantization_config = BitsAndBytesConfig(
     llm_int8_threshold=6.0,  # Set a higher threshold for switching between fp32 and int8
 ) if is_cuda_available else None
 
-# Custom device map to handle GPU and CPU memory allocation
-device_map = {"model.encoder": "cuda", "model.decoder": "cpu", "lm_head": "cuda"} if is_cuda_available else {"": "cpu"}
-
-# Load the model with quantization and custom device mapping
-logger.info(f"Loading model '{model_name}' with custom device map.")
-model = LlamaForCausalLM.from_pretrained(
-    model_name,
-    quantization_config=quantization_config,
-    torch_dtype=torch.float16 if is_cuda_available else torch.float32,  # Use appropriate dtype
-    low_cpu_mem_usage=True,
-    device_map=device_map,  # Use the custom device map for CPU/GPU allocation
-    load_in_8bit_fp32_cpu_offload=True  # Enable CPU offload for 8-bit quantized layers if necessary
-)
+try:
+    # Load the model with quantization and offloading
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        quantization_config=quantization_config,
+        torch_dtype=torch.float16 if is_cuda_available else torch.float32,  # Use appropriate dtype
+        low_cpu_mem_usage=True,
+        device_map="auto",  # Let transformers handle device placement
+        load_in_8bit_fp32_cpu_offload=True  # Enable CPU offload for 8-bit quantized layers if necessary
+    )
+    logger.info("Model loaded successfully with quantization and CPU offloading.")
+except ValueError as ve:
+    logger.error(f"ValueError during model loading: {str(ve)}")
+    raise
+except Exception as e:
+    logger.error(f"Failed to load model: {str(e)}")
+    raise
 
 # Set the model to evaluation mode to reduce overhead
 model.eval()
-logger.info("Model loaded and set to evaluation mode.")
+logger.info("Model set to evaluation mode.")
 
 # Define a prompt template to guide the model
 PROMPT_TEMPLATE = """You are an AI assistant that provides accurate and concise answers to user queries.
@@ -116,12 +135,18 @@ def generate_response():
             return_tensors="pt",
             truncation=True,
             max_length=2048  # Adjust max_length as per model's context window
-        ).to(device)
+        )
+
+        # Move inputs to appropriate device
+        if is_cuda_available:
+            inputs = inputs.to("cuda")
+        else:
+            inputs = inputs.to("cpu")
 
         # Generate a response using the model
         outputs = model.generate(
             inputs["input_ids"],
-            max_new_tokens=500,  # Limit tokens to maintain concise answers
+            max_new_tokens=250,  # Limit tokens to maintain concise answers
             temperature=0.7,      # Adjust temperature for creativity
             top_p=0.9,            # Increase top_p for diversity
             do_sample=True,
